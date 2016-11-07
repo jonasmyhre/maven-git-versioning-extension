@@ -1,0 +1,7 @@
+.idea
+*.iml
+out
+gen
+target
+
+/test_project_multi_module/.mvn/timing.properties

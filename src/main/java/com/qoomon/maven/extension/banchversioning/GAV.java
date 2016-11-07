@@ -1,16 +1,23 @@
-package com.qoomon.maven.extension.banchversion;
+package com.qoomon.maven.extension.banchversioning;
 
 import org.apache.maven.model.Model;
 import org.apache.maven.model.Parent;
 import org.apache.maven.project.MavenProject;
 
 /**
- * Created by qoomon on 04/11/2016.
+ * Group-Artifact-Version (GAV)
  */
 public class GAV {
+
     private String groupId;
     private String artifactId;
     private String version;
+
+    protected GAV(String groupId, String artifactId, String version) {
+        this.groupId = groupId;
+        this.artifactId = artifactId;
+        this.version = version;
+    }
 
     /**
      * Builds an immutable GAV object.
@@ -19,10 +26,8 @@ public class GAV {
      * @param artifactId the artifactId of the maven object
      * @param version    the version of the maven object
      */
-    public GAV(String groupId, String artifactId, String version) {
-        this.groupId = groupId;
-        this.artifactId = artifactId;
-        this.version = version;
+    public static GAV of(String groupId, String artifactId, String version) {
+        return new GAV(groupId, artifactId, version);
     }
 
     /**
