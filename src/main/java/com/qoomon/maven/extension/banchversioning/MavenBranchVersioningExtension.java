@@ -89,14 +89,18 @@ public class MavenBranchVersioningExtension extends AbstractMavenLifecyclePartic
         Map<GAV, String> versionMap = Maps.newHashMap();
         for (MavenProject project : projects) {
             String branchVersion;
+            // Main Branch
             if (mainReleaseBranch.equalsIgnoreCase(branchName)) {
-                branchVersion = project.getVersion();
+                branchVersion = project.getVersion().replaceFirst("-SNAPSHOT$","");
             } else {
                 String branchNameUnified = branchName.replaceAll("[^A-Za-z0-9]", "_");
+                // Release Branches
                 if (releaseBranchPrefixSet.stream().anyMatch(prefix -> branchName.matches("^" + prefix))) {
-                    branchVersion = branchNameUnified + "-" + project.getVersion();
-                } else {
-                    branchVersion = branchNameUnified;
+                    branchVersion = branchNameUnified + "-" + project.getVersion().replaceFirst("-SNAPSHOT$","");
+                }
+                // SNAPSHOT Branches
+                else {
+                    branchVersion = branchNameUnified + "-SNAPSHOT";
                 }
             }
             versionMap.put(GAV.of(project), branchVersion);

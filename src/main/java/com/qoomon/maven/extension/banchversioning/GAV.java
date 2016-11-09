@@ -25,6 +25,7 @@ public class GAV {
      * @param groupId    the groupId of the maven object
      * @param artifactId the artifactId of the maven object
      * @param version    the version of the maven object
+     * @return a new GAV object
      */
     public static GAV of(String groupId, String artifactId, String version) {
         return new GAV(groupId, artifactId, version);

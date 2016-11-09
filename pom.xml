@@ -6,31 +6,41 @@
 
     <groupId>com.qoomon</groupId>
     <artifactId>maven-branch-versioning-extension</artifactId>
-    <version>1.1-SNAPSHOT</version>
+    <version>1.0.2-SNAPSHOT</version>
     <packaging>maven-plugin</packaging>
 
-    <properties>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <maven.compiler.source>1.8</maven.compiler.source>
-        <maven.compiler.target>1.8</maven.compiler.target>
-    </properties>
+    <name>Maven Branch Versioning Extension</name>
+    <description>Maven Branch Versioning Extension</description>
+    <url>https://github.com/qoomon/maven-branch-versioning-extension</url>
 
-    <issueManagement>
-        <system>GitHub</system>
-        <url>https://github.com/jgitver/jgitver-maven-plugin/issues</url>
-    </issueManagement>
+    <scm>
+        <url>https://github.com/qoomon/maven-branch-versioning-extension.git</url>
+        <connection>scm:git:https://github.com/qoomon/maven-branch-versioning-extension.git</connection>
+    </scm>
+
+    <licenses>
+        <license>
+            <name>The MIT License (MIT)</name>
+            <url>http://opensource.org/licenses/MIT</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
 
     <developers>
         <developer>
-            <id>qoomon</id>
             <name>Bengt Brodersen</name>
-            <timezone>Europe/Berlin</timezone>
             <url>http://qoomon.com</url>
             <roles>
                 <role>project creator</role>
             </roles>
         </developer>
     </developers>
+
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <maven.compiler.source>1.8</maven.compiler.source>
+        <maven.compiler.target>1.8</maven.compiler.target>
+    </properties>
 
     <dependencies>
         <dependency>
@@ -77,6 +87,65 @@
                     <skipErrorNoDescriptorsFound>true</skipErrorNoDescriptorsFound>
                 </configuration>
             </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-source-plugin</artifactId>
+                <version>2.4</version>
+                <executions>
+                    <execution>
+                        <id>attach-sources</id>
+                        <goals>
+                            <goal>jar-no-fork</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <version>2.10.3</version>
+                <executions>
+                    <execution>
+                        <id>attach-javadocs</id>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-gpg-plugin</artifactId>
+                <version>1.6</version>
+                <executions>
+                    <execution>
+                        <id>sign-artifacts</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>sign</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
+
+    <distributionManagement>
+        <snapshotRepository>
+            <id>sonatype-nexus-snapshots</id>
+            <name>Sonatype Nexus Snapshots</name>
+            <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+        </snapshotRepository>
+        <repository>
+            <id>sonatype-nexus-staging</id>
+            <name>Nexus Release Repository</name>
+            <url>
+                https://oss.sonatype.org/service/local/staging/deploy/maven2/
+            </url>
+        </repository>
+    </distributionManagement>
 </project>
+
+        <!--Deploy to Nexus Command-->
+        <!--mvn deploy -Dgpg.passphrase=PASSWORD-->
