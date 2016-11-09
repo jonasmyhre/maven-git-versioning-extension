@@ -142,7 +142,7 @@ public class GAV {
 
     @Override
     public String toString() {
-        return String.format("%s::%s::%s", groupId, artifactId, version);
+        return String.format("%s:%s:%s", groupId, artifactId, version);
     }
 
 }
