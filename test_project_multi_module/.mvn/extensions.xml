@@ -4,19 +4,7 @@
     <extension>
         <groupId>com.qoomon</groupId>
         <artifactId>maven-branch-versioning-extension</artifactId>
-        <version>1.0.2-SNAPSHOT</version>
-    </extension>
-
-    <extension>
-        <groupId>io.takari.aether</groupId>
-        <artifactId>aether-connector-okhttp</artifactId>
-        <version>1.0.1-alpha</version>
-    </extension>
-
-    <extension>
-        <groupId>io.takari.maven</groupId>
-        <artifactId>takari-smart-builder</artifactId>
-        <version>0.4.1</version>
+        <version>1.0.3-SNAPSHOT</version>
     </extension>
 
 </extensions>
