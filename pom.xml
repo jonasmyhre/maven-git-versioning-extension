@@ -6,7 +6,7 @@
 
     <groupId>com.qoomon</groupId>
     <artifactId>maven-branch-versioning-extension</artifactId>
-    <version>1.0.3-SNAPSHOT</version>
+    <version>1.2.0-SNAPSHOT</version>
     <packaging>maven-plugin</packaging>
 
     <name>Maven Branch Versioning Extension</name>
@@ -43,11 +43,11 @@
     </properties>
 
     <dependencies>
+
         <dependency>
             <groupId>org.apache.maven</groupId>
             <artifactId>maven-core</artifactId>
             <version>3.3.9</version>
-            <scope>provided</scope>
         </dependency>
 
         <dependency>
@@ -143,6 +143,8 @@
     </profiles>
 
     <distributionManagement>
+        <!--Deploy to Nexus Command-->
+        <!--mvn deploy -Dgpg.passphrase=PASSWORD-->
         <snapshotRepository>
             <id>sonatype-nexus-snapshots</id>
             <name>Sonatype Nexus Snapshots</name>
@@ -151,12 +153,8 @@
         <repository>
             <id>sonatype-nexus-staging</id>
             <name>Nexus Release Repository</name>
-            <url>
-                https://oss.sonatype.org/service/local/staging/deploy/maven2/
-            </url>
+            <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
         </repository>
     </distributionManagement>
 </project>
 
-        <!--Deploy to Nexus Command-->
-        <!--mvn deploy -Dgpg.passphrase=PASSWORD-->

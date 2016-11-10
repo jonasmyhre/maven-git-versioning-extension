@@ -27,59 +27,125 @@ import java.util.regex.Pattern;
 /**
  * Created by qoomon on 04/11/2016.
  */
+
 @Component(role = AbstractMavenLifecycleParticipant.class, hint = "MavenBranchVersion")
 public class MavenBranchVersioningExtension extends AbstractMavenLifecycleParticipant {
 
-    // see http://semver.org/#semantic-versioning-200
-    private final Pattern SEMVER_PATTERN = Pattern.compile("^(0|[1-9][0-9]*)(\\.(0|[1-9][0-9]*))?(\\.(0|[1-9][0-9]*))?(-[a-zA-Z][a-zA-Z0-9]*)?(\\+[a-zA-Z0-9]+)?$");
+    /**
+     * Settings
+     */
 
     private String mainReleaseBranch = "master";
 
     private Set<String> releaseBranchPrefixSet = Sets.newHashSet("support-", "support/");
+
+    public static final String RELEASE_PROFILE_NAME = "release";
+
+    /**
+     * Options
+     */
+
+    public static final String DISABLE_BRANCH_VERSIONING_PROPERTY_KEY = "disableBranchVersioning";
+
+
+    /**
+     * Constants
+     */
+    // see http://semver.org/#semantic-versioning-200
+    private final Pattern SEMVER_PATTERN = Pattern.compile("^(0|[1-9][0-9]*)(\\.(0|[1-9][0-9]*))?(\\.(0|[1-9][0-9]*))?(-[a-zA-Z][a-zA-Z0-9]*)?(\\+[a-zA-Z0-9]+)?$");
+
 
     @Requirement
     private Logger logger;
 
 
     @Override
-    public void afterProjectsRead(MavenSession mavenSession) throws MavenExecutionException {
-        List<MavenProject> projects = mavenSession.getAllProjects();
+    public void afterSessionStart(MavenSession mavenSession) throws MavenExecutionException {
+    }
 
-        logger.info("--- maven-semantic-versioning-extension ");
-        // check for semantic versioning format
-        for (MavenProject project : projects) {
-            if (!SEMVER_PATTERN.matcher(project.getVersion()).matches()) {
-                throw new MavenExecutionException("Version Format validation", new IllegalArgumentException(project.getArtifact() + " version does not match semantic versioning pattern " + SEMVER_PATTERN));
-            }
+
+    @Override
+    public void afterProjectsRead(MavenSession mavenSession) throws MavenExecutionException {
+        Boolean disableExtension = Boolean.valueOf(mavenSession.getUserProperties().getProperty(DISABLE_BRANCH_VERSIONING_PROPERTY_KEY, "false"));
+        if (disableExtension) {
+            return;
         }
 
-        logger.info("--- maven-branch-versioning-extension ");
 
-        try {
-            File gitDirectory = new File(mavenSession.getExecutionRootDirectory());
-            FileRepositoryBuilder repositoryBuilder = new FileRepositoryBuilder()
-                    .findGitDir(gitDirectory);  // scan up the file system tree
+        File gitDirectory = new File(mavenSession.getExecutionRootDirectory());
+        FileRepositoryBuilder repositoryBuilder = new FileRepositoryBuilder().findGitDir(gitDirectory);
 
+        {
+            logger.info("--- maven-semantic-versioning-extension ");
+
+            // ensure semantic version format
+            List<MavenProject> projects = mavenSession.getAllProjects();
+            for (MavenProject project : projects) {
+                logger.info("Ensure semantic version format @ " + project.getArtifact());
+                if (!SEMVER_PATTERN.matcher(project.getVersion()).matches()) {
+                    throw new MavenExecutionException("Version validation error", new IllegalArgumentException(project.getArtifact() + " version does not match semantic versioning pattern " + SEMVER_PATTERN));
+                }
+            }
+            logger.info("");
+        }
+
+        {
+            logger.info("--- maven-branch-versioning-extension ");
+
+            List<MavenProject> projects = mavenSession.getAllProjects();
+
+            // ensure snapshot versions
+            for (MavenProject project : projects) {
+                logger.info("Ensure snapshot version @ " + project.getArtifact());
+                if (!project.getVersion().endsWith("-SNAPSHOT")) {
+                    throw new MavenExecutionException("Version validation error", new IllegalArgumentException(project.getArtifact() + " version is not a snapshot version"));
+                }
+            }
+
+            // update project version to branch version for current maven session
             try (Repository repository = repositoryBuilder.build()) {
                 updateProjectVersionsToBranchVersions(projects, repository);
+            } catch (Exception e) {
+                logger.error("", e);
+                throw new MavenExecutionException("", e);
             }
-
-        } catch (Exception e) {
-            logger.error("", e);
-            throw new MavenExecutionException("Error while determine project version(s)", e);
+            logger.info("");
         }
+
+        {
+            logger.info("--- maven-branch-release-extension ");
+
+            // enable release profile ofr release branches
+            try (Repository repository = repositoryBuilder.build()) {
+                String branchName = repository.getBranch();
+                if (branchName.equals(mainReleaseBranch) || releaseBranchPrefixSet.stream().anyMatch(branchName::startsWith)) {
+                    if (mavenSession.getSettings().getProfiles().contains(RELEASE_PROFILE_NAME)) {
+                        logger.info("Activate " + RELEASE_PROFILE_NAME + "profile");
+                        mavenSession.getSettings().addActiveProfile(RELEASE_PROFILE_NAME);
+                    } else {
+                        logger.info("No " + RELEASE_PROFILE_NAME + "profile");
+                    }
+                }
+            } catch (Exception e) {
+                logger.error("", e);
+                throw new MavenExecutionException("", e);
+            }
+            logger.info("");
+        }
+
+
     }
 
     private void updateProjectVersionsToBranchVersions(List<MavenProject> projects, Repository repository) throws IOException {
 
-        Map<Artifact, String> versionMap = determineProjectVersions(projects, repository);
+        Map<Artifact, String> versionMap = determineProjectBranchVersions(projects, repository);
 
         for (MavenProject project : projects) {
             updateProjectVersion(versionMap, project);
         }
     }
 
-    private Map<Artifact, String> determineProjectVersions(List<MavenProject> projects, Repository repository) throws IOException {
+    private Map<Artifact, String> determineProjectBranchVersions(List<MavenProject> projects, Repository repository) throws IOException {
 
         String branchName = repository.getBranch();
         logger.debug("branch: " + branchName);
@@ -116,8 +182,7 @@ public class MavenBranchVersioningExtension extends AbstractMavenLifecyclePartic
                 branchVersion = branchName + "-SNAPSHOT";
             }
 
-            logger.info(project.getArtifact() + System.lineSeparator()
-                    + "       Branch version: " + branchVersion);
+            logger.info("Processing change of " + project.getArtifact() + " -> " + branchVersion);
 
             versionMap.put(project.getArtifact(), branchVersion);
         }
@@ -126,6 +191,7 @@ public class MavenBranchVersioningExtension extends AbstractMavenLifecyclePartic
     }
 
     private void updateProjectVersion(Map<Artifact, String> newProjectVersionMap, MavenProject project) throws IOException {
+
         // --- update project ---
         {
             // update project parent version
@@ -172,6 +238,7 @@ public class MavenBranchVersioningExtension extends AbstractMavenLifecyclePartic
 
             updateProjectFile(project);
         }
+
     }
 
     private void updateProjectFile(MavenProject project) throws IOException {
@@ -185,4 +252,8 @@ public class MavenBranchVersioningExtension extends AbstractMavenLifecyclePartic
         project.setPomFile(newPomFile);
     }
 
+
+    @Override
+    public void afterSessionEnd(MavenSession session) throws MavenExecutionException {
+    }
 }
